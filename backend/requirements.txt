@@ -4,3 +4,6 @@ sqlalchemy
 alembic
 psycopg2-binary
 python-dateutil
+httpx
+google-genai
+python-dotenv

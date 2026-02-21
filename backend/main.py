@@ -1,8 +1,28 @@
 from fastapi import FastAPI, Depends
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from database import engine, Base, get_db
+from dotenv import load_dotenv
+
+load_dotenv() # Load env vars from .env file
+
+from routes import tasks, holidays, calendar, chat
 
 app = FastAPI(title="TaskTracker API")
+
+# Configure CORS for local React development
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://localhost:5173"], # React defaults
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(tasks.router, prefix="/api")
+app.include_router(holidays.router, prefix="/api")
+app.include_router(calendar.router, prefix="/api")
+app.include_router(chat.router, prefix="/api")
 
 @app.get("/health")
 def health_check(db: Session = Depends(get_db)):
