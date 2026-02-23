@@ -1,30 +1,31 @@
-from pydantic import BaseModel, EmailStr
-from typing import Optional, List
+from pydantic import BaseModel
+from typing import Optional, List, Literal, Any
 from datetime import datetime, date
 from uuid import UUID
 
-# --- User Schemas --- #
-class UserBase(BaseModel):
-    email: EmailStr
-    timezone: str = "UTC"
-
-class UserCreate(UserBase):
-    password: str
-
-class UserResponse(UserBase):
+# --- Profile Schemas --- #
+class ProfileResponse(BaseModel):
     id: UUID
+    display_name: Optional[str] = None
+    timezone: str
+    week_start_day: str
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 
 # --- Task Schemas --- #
+class RecurrenceRule(BaseModel):
+    period: str  # Weekly, Monthly, Quarterly, Yearly, OneTime
+    occurrence: str  # Mon,Wed,Fri  or  1  or  Mar 1  etc.
+
 class TaskBase(BaseModel):
     name: str
     category: str
-    period: str
-    occurrence: str
-    base_time_minutes: int
+    recurrence_rule: RecurrenceRule
+    base_time_minutes: Optional[int] = None
+    priority: int = 0
+    notes: Optional[str] = None
 
 class TaskCreate(TaskBase):
     pass
@@ -32,10 +33,10 @@ class TaskCreate(TaskBase):
 class TaskResponse(TaskBase):
     id: UUID
     user_id: UUID
-    task_id: str
+    task_code: str
     status: str
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 
@@ -48,8 +49,6 @@ class TaskInstanceResponse(BaseModel):
     status: str
     completed_at: Optional[datetime] = None
     created_at: datetime
-    
-    # Nested task info for the frontend calendar view
     task: Optional[TaskResponse] = None
 
     class Config:
@@ -68,7 +67,7 @@ class HolidayResponse(HolidayBase):
     id: UUID
     user_id: UUID
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 
@@ -78,3 +77,36 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     reply: str
+
+# --- Dashboard Schemas --- #
+class CategoryCount(BaseModel):
+    name: str
+    count: int
+    color: str
+
+class WeekDayData(BaseModel):
+    day: str
+    completed: int
+    pending: int
+
+class DashboardMetricsResponse(BaseModel):
+    totalTasks: int
+    completionRate: int
+    hoursScheduled: float
+    busiestDay: str
+    tasksByCategory: List[CategoryCount]
+    weeklyData: List[WeekDayData]
+    upcomingTasks: List[TaskInstanceResponse]
+
+# --- Gamification Schemas --- #
+class GamificationResponse(BaseModel):
+    xp: int
+    level: int
+    levelName: str
+    xpForNextLevel: int
+    xpInCurrentLevel: int
+    streak: int
+
+# --- Task Instance Update --- #
+class TaskInstanceStatusUpdate(BaseModel):
+    status: Literal['Pending', 'Completed', 'Skipped', 'Cancelled']

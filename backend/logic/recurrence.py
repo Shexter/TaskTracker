@@ -4,28 +4,34 @@ from dateutil.relativedelta import relativedelta
 from sqlalchemy.orm import Session
 from models import Task, TaskInstance
 
+
 class RecurrenceExpander:
     def __init__(self, db: Session):
         self.db = db
 
     def expand_task(self, task: Task, start_date: date, end_date: date):
-        """Generates TaskInstances for the given task between start and end date (inclusive)"""
+        """Generates TaskInstances for the given task between start and end date (inclusive).
+        Reads period/occurrence from the recurrence_rule JSONB column."""
+        rule = task.recurrence_rule or {}
+        period = rule.get("period", "")
+        occurrence = rule.get("occurrence", "")
+
         instances = []
-        if task.period == "Weekly":
-            instances = self._expand_weekly(task, start_date, end_date)
-        elif task.period == "Monthly":
-            instances = self._expand_monthly(task, start_date, end_date)
-        elif task.period == "Quarterly":
-            instances = self._expand_quarterly(task, start_date, end_date)
-        elif task.period == "Yearly":
-            instances = self._expand_yearly(task, start_date, end_date)
-        elif task.period == "OneTime":
-            instances = self._expand_onetime(task, start_date, end_date)
-            
+        if period == "Weekly":
+            instances = self._expand_weekly(task, start_date, end_date, occurrence)
+        elif period == "Monthly":
+            instances = self._expand_monthly(task, start_date, end_date, occurrence)
+        elif period == "Quarterly":
+            instances = self._expand_quarterly(task, start_date, end_date, occurrence)
+        elif period == "Yearly":
+            instances = self._expand_yearly(task, start_date, end_date, occurrence)
+        elif period == "OneTime":
+            instances = self._expand_onetime(task, start_date, end_date, occurrence)
+
         generated_count = 0
         for inst_date in instances:
             existing = self.db.query(TaskInstance).filter(
-                TaskInstance.task_id == task.id, 
+                TaskInstance.task_id == task.id,
                 TaskInstance.occurrence_date == inst_date
             ).first()
             if not existing:
@@ -40,11 +46,10 @@ class RecurrenceExpander:
         self.db.commit()
         return generated_count
 
-    def _expand_weekly(self, task: Task, start_date: date, end_date: date):
-        # occurrence e.g. "Mon,Wed,Fri"
+    def _expand_weekly(self, task: Task, start_date: date, end_date: date, occurrence: str):
         days_map = {"Mon": 0, "Tue": 1, "Wed": 2, "Thu": 3, "Fri": 4, "Sat": 5, "Sun": 6}
-        target_days = [days_map[d.strip()] for d in task.occurrence.split(",") if d.strip() in days_map]
-        
+        target_days = [days_map[d.strip()] for d in occurrence.split(",") if d.strip() in days_map]
+
         instances = []
         current_date = start_date
         while current_date <= end_date:
@@ -53,41 +58,37 @@ class RecurrenceExpander:
             current_date += timedelta(days=1)
         return instances
 
-    def _expand_monthly(self, task: Task, start_date: date, end_date: date):
-        # occurrence e.g. "1" or "31"
+    def _expand_monthly(self, task: Task, start_date: date, end_date: date, occurrence: str):
         try:
-            target_day = int(task.occurrence)
+            target_day = int(occurrence)
         except ValueError:
-            return [] # Invalid for MVP
-            
+            return []
+
         instances = []
         current_date = start_date.replace(day=1)
         while current_date <= end_date:
             _, last_day = calendar.monthrange(current_date.year, current_date.month)
             day_to_use = min(target_day, last_day)
-            
+
             inst_date = current_date.replace(day=day_to_use)
             if start_date <= inst_date <= end_date:
                 instances.append(inst_date)
-            
+
             current_date += relativedelta(months=1)
         return instances
 
-    def _expand_quarterly(self, task: Task, start_date: date, end_date: date):
-        # occurrence e.g. "Mar 1"
+    def _expand_quarterly(self, task: Task, start_date: date, end_date: date, occurrence: str):
         try:
-            month_str, day_str = task.occurrence.split(" ")
+            month_str, day_str = occurrence.split(" ")
             target_day = int(day_str)
-            month_map = {"Jan":1, "Feb":2, "Mar":3, "Apr":4, "May":5, "Jun":6, "Jul":7, "Aug":8, "Sep":9, "Oct":10, "Nov":11, "Dec":12}
+            month_map = {"Jan": 1, "Feb": 2, "Mar": 3, "Apr": 4, "May": 5, "Jun": 6,
+                         "Jul": 7, "Aug": 8, "Sep": 9, "Oct": 10, "Nov": 11, "Dec": 12}
             target_month = month_map[month_str[:3]]
         except Exception:
             return []
 
         instances = []
-        # Find a starting date that matches the month/day before the start_date year.
-        current_date = date(start_date.year - 1, target_month, 1) # day handles end-of-month below
-        
-        # apply bounds logic for target_day based on the month
+        current_date = date(start_date.year - 1, target_month, 1)
         _, last_day = calendar.monthrange(current_date.year, current_date.month)
         day_to_use = min(target_day, last_day)
         current_date = current_date.replace(day=day_to_use)
@@ -99,15 +100,15 @@ class RecurrenceExpander:
             _, last_day = calendar.monthrange(current_date.year, current_date.month)
             day_to_use = min(target_day, last_day)
             current_date = current_date.replace(day=day_to_use)
-            
+
         return instances
 
-    def _expand_yearly(self, task: Task, start_date: date, end_date: date):
-        # occurrence e.g. "Apr 30"
+    def _expand_yearly(self, task: Task, start_date: date, end_date: date, occurrence: str):
         try:
-            month_str, day_str = task.occurrence.split(" ")
+            month_str, day_str = occurrence.split(" ")
             target_day = int(day_str)
-            month_map = {"Jan":1, "Feb":2, "Mar":3, "Apr":4, "May":5, "Jun":6, "Jul":7, "Aug":8, "Sep":9, "Oct":10, "Nov":11, "Dec":12}
+            month_map = {"Jan": 1, "Feb": 2, "Mar": 3, "Apr": 4, "May": 5, "Jun": 6,
+                         "Jul": 7, "Aug": 8, "Sep": 9, "Oct": 10, "Nov": 11, "Dec": 12}
             target_month = month_map[month_str[:3]]
         except Exception:
             return []
@@ -125,13 +126,12 @@ class RecurrenceExpander:
             _, last_day = calendar.monthrange(current_date.year, current_date.month)
             day_to_use = min(target_day, last_day)
             current_date = current_date.replace(day=day_to_use)
-            
+
         return instances
 
-    def _expand_onetime(self, task: Task, start_date: date, end_date: date):
-        # occurrence e.g. "2026-04-15"
+    def _expand_onetime(self, task: Task, start_date: date, end_date: date, occurrence: str):
         try:
-            inst_date = date.fromisoformat(task.occurrence)
+            inst_date = date.fromisoformat(occurrence)
             if start_date <= inst_date <= end_date:
                 return [inst_date]
         except ValueError:

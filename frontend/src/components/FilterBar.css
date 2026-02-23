@@ -1,0 +1,117 @@
+.filter-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
+    flex-wrap: wrap;
+}
+
+.filter-label {
+    font-size: var(--font-xs);
+    font-weight: 600;
+    color: hsl(var(--text-muted));
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-right: var(--space-2);
+}
+
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-full);
+    font-size: var(--font-xs);
+    font-weight: 600;
+    color: hsl(var(--text-tertiary));
+    background: hsl(var(--bg-tertiary));
+    border: 1px solid hsl(var(--border-default));
+    transition: all var(--transition-fast);
+    cursor: pointer;
+}
+
+.filter-chip:hover {
+    background: hsl(var(--bg-hover));
+}
+
+.filter-chip.active {
+    color: white;
+}
+
+.filter-chip.active.all {
+    background: hsl(var(--accent));
+    border-color: hsl(var(--accent));
+}
+
+.filter-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: var(--radius-full);
+    background: currentColor;
+    opacity: 0.5;
+}
+
+/* Category-specific active states */
+.filter-chip.filter-health.active {
+    background: hsl(var(--cat-health));
+    border-color: hsl(var(--cat-health));
+}
+
+.filter-chip.filter-health .filter-dot {
+    background: hsl(var(--cat-health));
+}
+
+.filter-chip.filter-bills.active {
+    background: hsl(var(--cat-bills));
+    border-color: hsl(var(--cat-bills));
+}
+
+.filter-chip.filter-bills .filter-dot {
+    background: hsl(var(--cat-bills));
+}
+
+.filter-chip.filter-taxes.active {
+    background: hsl(var(--cat-taxes));
+    border-color: hsl(var(--cat-taxes));
+}
+
+.filter-chip.filter-taxes .filter-dot {
+    background: hsl(var(--cat-taxes));
+}
+
+.filter-chip.filter-work.active {
+    background: hsl(var(--cat-work));
+    border-color: hsl(var(--cat-work));
+}
+
+.filter-chip.filter-work .filter-dot {
+    background: hsl(var(--cat-work));
+}
+
+.filter-chip.filter-personal.active {
+    background: hsl(var(--cat-personal));
+    border-color: hsl(var(--cat-personal));
+}
+
+.filter-chip.filter-personal .filter-dot {
+    background: hsl(var(--cat-personal));
+}
+
+/* Divider */
+.filter-divider {
+    width: 1px;
+    height: 20px;
+    background: hsl(var(--border-default));
+    margin: 0 var(--space-2);
+}
+
+/* Routine toggle */
+.filter-chip.routine-toggle {
+    font-weight: 500;
+}
+
+.filter-chip.routine-toggle.active {
+    background: hsla(var(--accent), 0.1);
+    color: hsl(var(--accent));
+    border-color: hsla(var(--accent), 0.3);
+}
