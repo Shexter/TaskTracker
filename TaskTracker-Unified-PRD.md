@@ -152,8 +152,8 @@ All Calendar Views
 - **S-V: Quarterly Columns** (Q1-Q4) - Quarterly mapping
 - **W-AH: Monthly Status** (JAN-DEC, N/P/S) - Monthly status flags
   - N = Normal
-  - P = Partial
-  - S = Special
+  - P = Peak
+  - S = Slow
 
 **Current Data** (12 holidays):
 - New Year's Day (Jan 1, fully configured)
@@ -640,6 +640,14 @@ tasks = db.query(Task).filter(Task.user_id == current_user.id).all()
 - Shared tasks and permissions model
 - Email/in-app notifications
 - Advanced analytics (burndown, trends)
+- **Adaptive Duration Scaling**: Machine-learning style feedback loop where future task durations adjust based on actual time spent.
+- **Seasonality Engine**: Duration multipliers (1.5x Peak, 0.7x Slow) tied to Monthly Status (N/P/S).
+- **Composite/Grouped Tasks**: Hierarchical tasking (e.g., "Mornining Routine" contains sub-tasks).
+- **Gamification Layer**: Progress bars and interaction rewards (Duolingo style).
+- **Smart Filtering**: Automatic hiding of low-priority routine tasks in higher-level (Monthly/Yearly) views.
+- **Advanced Recurrence**: Alternating weeks, specific ordinal days (3rd Wed), and holiday-aware shifting.
+- **Data Portability**: CSV/ICS import and export.
+- **Dynamic Task Reorganization**: "Self-healing" schedule that automatically optimizes Gaps created by cancellations (e.g., Pull-forward, De-fragmentation).
 
 ---
 

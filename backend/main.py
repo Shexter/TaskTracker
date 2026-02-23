@@ -13,7 +13,7 @@ app = FastAPI(title="TaskTracker API")
 # Configure CORS for local React development
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"], # React defaults
+    allow_origins=["http://localhost:3000", "http://localhost:5174"], # React defaults
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
