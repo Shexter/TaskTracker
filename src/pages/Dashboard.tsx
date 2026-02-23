@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import {
     BarChart,
     Bar,
@@ -18,37 +18,20 @@ import {
     CalendarDays,
     ArrowRight,
 } from 'lucide-react';
-import { getDashboardMetrics } from '../api/dashboard';
-import type { DashboardMetrics } from '../types';
-import { format } from 'date-fns';
+import {
+    mockTasks,
+    expandTaskInstances,
+    computeMetrics,
+    format,
+} from '../data/mockData';
 import './Dashboard.css';
 
 export default function Dashboard() {
-    const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        getDashboardMetrics()
-            .then(setMetrics)
-            .catch((e) => setError(e.message))
-            .finally(() => setLoading(false));
+    const metrics = useMemo(() => {
+        const now = new Date();
+        const instances = expandTaskInstances(mockTasks, now);
+        return computeMetrics(mockTasks, instances);
     }, []);
-
-    if (loading) {
-        return (
-            <div className="dashboard-page">
-                <div className="page-header"><h1>Dashboard</h1><p>Loading your metrics...</p></div>
-            </div>
-        );
-    }
-    if (error || !metrics) {
-        return (
-            <div className="dashboard-page">
-                <div className="page-header"><h1>Dashboard</h1><p className="error">Error: {error}</p></div>
-            </div>
-        );
-    }
 
     const metricCards = [
         {
@@ -56,28 +39,28 @@ export default function Dashboard() {
             value: metrics.totalTasks,
             icon: <CalendarDays size={22} />,
             accent: 'var(--accent)',
-            change: `${format(new Date(), 'MMMM')} overview`,
+            change: '+8 this week',
         },
         {
             label: 'Completion Rate',
             value: `${metrics.completionRate}%`,
             icon: <CheckCircle2 size={22} />,
             accent: 'hsl(var(--status-completed))',
-            change: 'This month',
+            change: '↑ 5% from last month',
         },
         {
             label: 'Hours Scheduled',
             value: `${metrics.hoursScheduled}h`,
             icon: <Clock size={22} />,
             accent: 'hsl(var(--cat-work))',
-            change: 'Active tasks',
+            change: `${mockTasks.length} active tasks`,
         },
         {
             label: 'Busiest Day',
             value: metrics.busiestDay,
             icon: <TrendingUp size={22} />,
             accent: 'hsl(var(--cat-taxes))',
-            change: 'Peak productivity day',
+            change: `Peak productivity day`,
         },
     ];
 

@@ -1,0 +1,242 @@
+.yearview-page {
+    max-width: 1400px;
+}
+
+/* --- Controls --- */
+.yearview-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-4);
+}
+
+.yearview-year-label {
+    font-size: var(--font-2xl);
+    font-weight: 800;
+    min-width: 100px;
+    text-align: center;
+    letter-spacing: -0.02em;
+}
+
+/* --- Heat Legend --- */
+.heat-legend {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    justify-content: flex-end;
+    margin-bottom: var(--space-5);
+}
+
+.heat-legend-label {
+    font-size: 10px;
+    color: hsl(var(--text-muted));
+    margin: 0 var(--space-1);
+}
+
+.heat-square {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+}
+
+.heat-square[data-level="0"] {
+    background: hsl(var(--bg-tertiary));
+}
+
+.heat-square[data-level="1"] {
+    background: hsla(var(--accent), 0.25);
+}
+
+.heat-square[data-level="2"] {
+    background: hsla(var(--accent), 0.45);
+}
+
+.heat-square[data-level="3"] {
+    background: hsla(var(--accent), 0.65);
+}
+
+.heat-square[data-level="4"] {
+    background: hsl(var(--accent));
+}
+
+/* --- Month Grid --- */
+.yearview-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-4);
+}
+
+.yearview-month {
+    padding: var(--space-4);
+}
+
+.month-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-2);
+}
+
+.month-name {
+    font-size: var(--font-sm);
+    font-weight: 700;
+}
+
+.month-rate {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: var(--radius-full);
+    background: hsla(var(--status-pending), 0.15);
+    color: hsl(var(--status-pending));
+}
+
+.month-rate[data-good="true"] {
+    background: hsla(var(--status-completed), 0.15);
+    color: hsl(var(--status-completed));
+}
+
+/* --- Mini Weekdays --- */
+.mini-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    margin-bottom: 2px;
+}
+
+.mini-weekday {
+    font-size: 9px;
+    color: hsl(var(--text-muted));
+    text-align: center;
+    font-weight: 600;
+}
+
+/* --- Mini Calendar --- */
+.mini-calendar {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.mini-day {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 2px;
+    transition: all var(--transition-fast);
+    cursor: pointer;
+}
+
+.mini-day.empty {
+    cursor: default;
+}
+
+.mini-day[data-level="0"] {
+    background: hsl(var(--bg-tertiary));
+}
+
+.mini-day[data-level="1"] {
+    background: hsla(var(--accent), 0.2);
+}
+
+.mini-day[data-level="2"] {
+    background: hsla(var(--accent), 0.4);
+}
+
+.mini-day[data-level="3"] {
+    background: hsla(var(--accent), 0.6);
+}
+
+.mini-day[data-level="4"] {
+    background: hsl(var(--accent));
+}
+
+.mini-day:not(.empty):hover {
+    transform: scale(1.5);
+    z-index: 5;
+    box-shadow: 0 0 6px hsla(var(--accent), 0.5);
+}
+
+.mini-day.today {
+    outline: 2px solid hsl(var(--text-primary));
+    outline-offset: -1px;
+}
+
+.mini-day.holiday {
+    outline: 2px solid hsl(var(--cat-taxes));
+    outline-offset: -1px;
+}
+
+/* --- Month Footer --- */
+.month-footer {
+    margin-top: var(--space-2);
+    text-align: center;
+}
+
+.month-total {
+    font-size: 10px;
+    color: hsl(var(--text-muted));
+}
+
+/* --- Seasonality --- */
+.yearview-month.season-p {
+    border-color: hsla(350, 89%, 60%, 0.3);
+    box-shadow: inset 0 0 0 1px hsla(350, 89%, 60%, 0.08);
+}
+
+.yearview-month.season-s {
+    opacity: 0.7;
+}
+
+.month-name-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.season-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: var(--radius-full);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.season-badge.season-p {
+    background: hsla(350, 89%, 60%, 0.15);
+    color: hsl(350, 89%, 60%);
+}
+
+.season-badge.season-s {
+    background: hsla(217, 30%, 50%, 0.15);
+    color: hsl(217, 30%, 60%);
+}
+
+.month-multiplier {
+    font-size: 9px;
+    font-weight: 700;
+    color: hsl(var(--text-muted));
+    margin-left: var(--space-1);
+}
+
+/* Responsive */
+@media (max-width: 1100px) {
+    .yearview-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .yearview-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 500px) {
+    .yearview-grid {
+        grid-template-columns: 1fr;
+    }
+}

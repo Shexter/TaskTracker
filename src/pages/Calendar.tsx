@@ -1,13 +1,21 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import {
     ChevronLeft,
     ChevronRight,
     Star,
 } from 'lucide-react';
-import { getMonthInstances } from '../api/calendar';
-import { getHolidays } from '../api/holidays';
-import type { TaskInstance, Holiday } from '../types';
-import { format, startOfMonth, endOfMonth, addMonths, subMonths, eachDayOfInterval, getDay, isToday, isSameMonth } from 'date-fns';
+import {
+    mockTasks,
+    mockHolidays,
+    expandTaskInstances,
+    format,
+    startOfMonth,
+    endOfMonth,
+    addMonths,
+    subMonths,
+    type TaskInstance,
+} from '../data/mockData';
+import { eachDayOfInterval, getDay, isToday, isSameMonth } from 'date-fns';
 import './Calendar.css';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -23,15 +31,11 @@ const categoryClass: Record<string, string> = {
 export default function Calendar() {
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
-    const [instances, setInstances] = useState<TaskInstance[]>([]);
-    const [holidays, setHolidays] = useState<Holiday[]>([]);
 
-    useEffect(() => {
-        const dateStr = format(currentMonth, 'yyyy-MM-dd');
-        Promise.all([getMonthInstances(dateStr), getHolidays()])
-            .then(([inst, hol]) => { setInstances(inst); setHolidays(hol); })
-            .catch(console.error);
-    }, [currentMonth]);
+    const instances = useMemo(
+        () => expandTaskInstances(mockTasks, currentMonth),
+        [currentMonth]
+    );
 
     // Build the calendar grid
     const calendarDays = useMemo(() => {
@@ -64,11 +68,11 @@ export default function Calendar() {
     // Holiday map
     const holidayMap = useMemo(() => {
         const map: Record<string, string> = {};
-        for (const h of holidays) {
+        for (const h of mockHolidays) {
             map[h.holiday_date] = h.name;
         }
         return map;
-    }, [holidays]);
+    }, []);
 
     const goToToday = () => setCurrentMonth(new Date());
 
@@ -186,7 +190,7 @@ export default function Calendar() {
                                         </div>
                                         <div className="detail-task-name">{inst.task?.name}</div>
                                         <div className="detail-task-meta">
-                                            {inst.task?.base_time_minutes} min · {inst.task?.recurrence_rule?.period}
+                                            {inst.task?.base_time_minutes} min · {inst.task?.period}
                                         </div>
                                         <div className={`status-badge status-${inst.status.toLowerCase().replace(' ', '-')}`}>
                                             {inst.status}

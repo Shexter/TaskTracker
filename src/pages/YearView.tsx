@@ -1,14 +1,15 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown } from 'lucide-react';
-import { getMonthInstances } from '../api/calendar';
-import { getHolidays } from '../api/holidays';
-import type { TaskInstance, Holiday } from '../types';
 import {
+    mockTasks,
+    mockHolidays,
+    expandTaskInstances,
+    format,
     monthlyStatusMap,
     SEASONALITY_MULTIPLIERS,
     SEASONALITY_LABELS,
-} from '../types';
-import { format, eachDayOfInterval, startOfMonth, endOfMonth, getDay, isToday } from 'date-fns';
+} from '../data/mockData';
+import { eachDayOfInterval, startOfMonth, endOfMonth, getDay, isToday } from 'date-fns';
 import './YearView.css';
 
 const MONTHS = [
@@ -20,65 +21,50 @@ const WEEKDAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 export default function YearView() {
     const [year, setYear] = useState(new Date().getFullYear());
-    const [yearData, setYearData] = useState<Record<string, { count: number; dominant: string }>>({});
-    const [monthStats, setMonthStats] = useState<{ total: number; completed: number; rate: number }[]>(
-        Array(12).fill({ total: 0, completed: 0, rate: 0 })
-    );
-    const [holidays, setHolidays] = useState<Holiday[]>([]);
-    const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        setLoading(true);
-
-        // Fetch instances for all 12 months + holidays
-        const monthPromises = MONTHS.map((_, monthIdx) => {
-            const dateStr = `${year}-${String(monthIdx + 1).padStart(2, '0')}-01`;
-            return getMonthInstances(dateStr).catch(() => [] as TaskInstance[]);
-        });
-
-        Promise.all([...monthPromises, getHolidays()])
-            .then((results) => {
-                const allHolidays = results.pop() as Holiday[];
-                const monthArrays = results as TaskInstance[][];
-
-                // Build yearData (per-day counts)
-                const data: Record<string, { count: number; dominant: string }> = {};
-                const stats = monthArrays.map((instances) => {
-                    const completed = instances.filter((i) => i.status === 'Completed').length;
-                    for (const inst of instances) {
-                        if (!data[inst.occurrence_date]) {
-                            data[inst.occurrence_date] = { count: 0, dominant: '' };
-                        }
-                        data[inst.occurrence_date].count += 1;
-                        if (inst.task?.category) {
-                            data[inst.occurrence_date].dominant = inst.task.category;
-                        }
-                    }
-                    return {
-                        total: instances.length,
-                        completed,
-                        rate: instances.length > 0 ? Math.round((completed / instances.length) * 100) : 0,
-                    };
-                });
-
-                setYearData(data);
-                setMonthStats(stats);
-                setHolidays(allHolidays);
-            })
-            .catch(console.error)
-            .finally(() => setLoading(false));
+    // Expand instances for all 12 months
+    const yearData = useMemo(() => {
+        const data: Record<string, { count: number; dominant: string }> = {};
+        for (let month = 0; month < 12; month++) {
+            const monthDate = new Date(year, month, 1);
+            const instances = expandTaskInstances(mockTasks, monthDate);
+            for (const inst of instances) {
+                if (!data[inst.occurrence_date]) {
+                    data[inst.occurrence_date] = { count: 0, dominant: '' };
+                }
+                data[inst.occurrence_date].count += 1;
+                if (inst.task?.category) {
+                    data[inst.occurrence_date].dominant = inst.task.category;
+                }
+            }
+        }
+        return data;
     }, [year]);
 
     // Holiday set
     const holidaySet = useMemo(() => {
         const set = new Set<string>();
-        for (const h of holidays) {
+        for (const h of mockHolidays) {
             if (h.holiday_date.startsWith(String(year))) {
                 set.add(h.holiday_date);
             }
         }
         return set;
-    }, [holidays, year]);
+    }, [year]);
+
+    // Monthly aggregates
+    const monthStats = useMemo(() => {
+        return MONTHS.map((_, month) => {
+            const monthDate = new Date(year, month, 1);
+            const instances = expandTaskInstances(mockTasks, monthDate);
+            const completed = instances.filter((i) => i.status === 'Completed').length;
+            return {
+                total: instances.length,
+                completed,
+                rate: instances.length > 0 ? Math.round((completed / instances.length) * 100) : 0,
+            };
+        });
+    }, [year]);
 
     const getHeatLevel = (count: number): number => {
         if (count === 0) return 0;
@@ -122,8 +108,6 @@ export default function YearView() {
                 <span className="heat-legend-label">More</span>
             </div>
 
-            {loading && <div className="yearview-loading" style={{ textAlign: 'center', padding: '2rem', color: 'hsl(var(--text-tertiary))' }}>Loading year data…</div>}
-
             {/* Month Grid */}
             <div className="yearview-grid">
                 {MONTHS.map((monthName, monthIdx) => {
@@ -135,7 +119,7 @@ export default function YearView() {
                     const startDow = getDay(days[0]);
                     const stats = monthStats[monthIdx];
 
-                    const seasonStatus = monthlyStatusMap[monthIdx] || 'N';
+                    const seasonStatus = monthlyStatusMap[monthIdx];
                     const multiplier = SEASONALITY_MULTIPLIERS[seasonStatus];
                     const seasonLabel = SEASONALITY_LABELS[seasonStatus];
 

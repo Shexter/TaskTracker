@@ -1,9 +1,13 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Clock, CheckCircle2 } from 'lucide-react';
-import { getMonthInstances } from '../api/calendar';
-import { getHolidays } from '../api/holidays';
-import type { TaskInstance, Holiday } from '../types';
-import { format, addDays, subDays, isToday } from 'date-fns';
+import {
+    mockTasks,
+    mockHolidays,
+    expandTaskInstances,
+    format,
+    type TaskInstance,
+} from '../data/mockData';
+import { addDays, subDays, isToday } from 'date-fns';
 import './DayView.css';
 
 const categoryClass: Record<string, string> = {
@@ -18,20 +22,16 @@ const HOURS = Array.from({ length: 16 }, (_, i) => i + 6); // 6 AM to 9 PM
 
 export default function DayView() {
     const [currentDate, setCurrentDate] = useState(new Date());
-    const [instances, setInstances] = useState<TaskInstance[]>([]);
-    const [holidays, setHolidays] = useState<Holiday[]>([]);
 
-    useEffect(() => {
-        const dateStr = format(currentDate, 'yyyy-MM-dd');
-        Promise.all([getMonthInstances(dateStr), getHolidays()])
-            .then(([inst, hol]) => { setInstances(inst); setHolidays(hol); })
-            .catch(console.error);
-    }, [currentDate]);
+    const instances = useMemo(
+        () => expandTaskInstances(mockTasks, currentDate),
+        [currentDate]
+    );
 
     const dateStr = format(currentDate, 'yyyy-MM-dd');
     const dayInstances = instances.filter((i) => i.occurrence_date === dateStr);
 
-    const holiday = holidays.find((h) => h.holiday_date === dateStr);
+    const holiday = mockHolidays.find((h) => h.holiday_date === dateStr);
 
     // Distribute tasks across time slots for visual display
     const taskSlots = useMemo(() => {

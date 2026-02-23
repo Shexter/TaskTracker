@@ -1,11 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Plus, Trash2, Clock, RefreshCw } from 'lucide-react';
-import { getTasks, createTask, deleteTask } from '../api/tasks';
-import type { Task, RecurrenceRule } from '../types';
+import { mockTasks, type Task } from '../data/mockData';
 import './Tasks.css';
-
-const CATEGORIES = ['Health', 'Bills', 'Taxes', 'Work', 'Personal'] as const;
-const PERIODS = ['Weekly', 'Monthly', 'Quarterly', 'Yearly', 'OneTime'] as const;
 
 const categoryClass: Record<string, string> = {
     Health: 'cat-health',
@@ -22,48 +18,37 @@ const statusClass: Record<string, string> = {
 };
 
 export default function Tasks() {
-    const [tasks, setTasks] = useState<Task[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [tasks, setTasks] = useState<Task[]>(mockTasks);
     const [showModal, setShowModal] = useState(false);
     const [form, setForm] = useState({
         name: '',
-        category: 'Personal' as string,
-        period: 'Weekly' as string,
+        category: 'Personal' as Task['category'],
+        period: 'Weekly' as Task['period'],
         occurrence: '',
         base_time_minutes: 15,
     });
 
-    const loadTasks = () => {
-        setLoading(true);
-        getTasks().then(setTasks).catch(console.error).finally(() => setLoading(false));
+    const handleDelete = (id: string) => {
+        setTasks((prev) => prev.filter((t) => t.id !== id));
     };
 
-    useEffect(() => { loadTasks(); }, []);
-
-    const handleDelete = async (id: string) => {
-        await deleteTask(id).catch(console.error);
-        loadTasks();
-    };
-
-    const handleAdd = async () => {
+    const handleAdd = () => {
         if (!form.name || !form.occurrence) return;
-        try {
-            await createTask({
-                name: form.name,
-                category: form.category,
-                recurrence_rule: {
-                    period: form.period as RecurrenceRule['period'],
-                    occurrence: form.occurrence,
-                },
-                base_time_minutes: form.base_time_minutes,
-                priority: 3,
-            });
-            setForm({ name: '', category: 'Personal', period: 'Weekly', occurrence: '', base_time_minutes: 15 });
-            setShowModal(false);
-            loadTasks();
-        } catch (e) {
-            console.error(e);
-        }
+        const newTask: Task = {
+            id: `t-${Date.now()}`,
+            user_id: 'u-001',
+            task_id: `T${String(tasks.length + 1).padStart(3, '0')}`,
+            name: form.name,
+            category: form.category,
+            period: form.period,
+            occurrence: form.occurrence,
+            base_time_minutes: form.base_time_minutes,
+            status: 'Active',
+            created_at: new Date().toISOString(),
+        };
+        setTasks((prev) => [...prev, newTask]);
+        setForm({ name: '', category: 'Personal', period: 'Weekly', occurrence: '', base_time_minutes: 15 });
+        setShowModal(false);
     };
 
     return (
@@ -99,7 +84,7 @@ export default function Tasks() {
                     <tbody className="stagger">
                         {tasks.map((task) => (
                             <tr key={task.id}>
-                                <td className="task-id-cell">{task.task_code}</td>
+                                <td className="task-id-cell">{task.task_id}</td>
                                 <td className="task-name-cell">
                                     <span className="task-name">{task.name}</span>
                                 </td>
@@ -111,10 +96,10 @@ export default function Tasks() {
                                 <td>
                                     <span className="period-pill">
                                         <RefreshCw size={12} />
-                                        {task.recurrence_rule.period}
+                                        {task.period}
                                     </span>
                                 </td>
-                                <td className="occurrence-cell">{task.recurrence_rule.occurrence}</td>
+                                <td className="occurrence-cell">{task.occurrence}</td>
                                 <td>
                                     <span className="duration-pill">
                                         <Clock size={12} />
@@ -139,7 +124,7 @@ export default function Tasks() {
                         ))}
                     </tbody>
                 </table>
-                {!loading && tasks.length === 0 && (
+                {tasks.length === 0 && (
                     <div className="tasks-empty">
                         <p>No tasks yet. Click "Add Task" to get started!</p>
                     </div>
@@ -169,9 +154,13 @@ export default function Tasks() {
                                 <select
                                     className="form-select"
                                     value={form.category}
-                                    onChange={(e) => setForm({ ...form, category: e.target.value })}
+                                    onChange={(e) => setForm({ ...form, category: e.target.value as Task['category'] })}
                                 >
-                                    {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
+                                    <option>Health</option>
+                                    <option>Bills</option>
+                                    <option>Taxes</option>
+                                    <option>Work</option>
+                                    <option>Personal</option>
                                 </select>
                             </div>
 
@@ -180,9 +169,13 @@ export default function Tasks() {
                                 <select
                                     className="form-select"
                                     value={form.period}
-                                    onChange={(e) => setForm({ ...form, period: e.target.value })}
+                                    onChange={(e) => setForm({ ...form, period: e.target.value as Task['period'] })}
                                 >
-                                    {PERIODS.map((p) => <option key={p}>{p}</option>)}
+                                    <option>Weekly</option>
+                                    <option>Monthly</option>
+                                    <option>Quarterly</option>
+                                    <option>Yearly</option>
+                                    <option>OneTime</option>
                                 </select>
                             </div>
                         </div>

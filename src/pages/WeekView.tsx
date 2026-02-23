@@ -1,9 +1,15 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Plus, Clock, X } from 'lucide-react';
-import { getWeekInstances } from '../api/calendar';
-import { getHolidays } from '../api/holidays';
-import type { TaskInstance, Holiday } from '../types';
-import { format, startOfWeek, addDays, subDays, isToday, isSameDay } from 'date-fns';
+import {
+    mockTasks,
+    mockHolidays,
+    expandTaskInstancesForWeek,
+    format,
+    startOfWeek,
+    type TaskInstance,
+    type Task,
+} from '../data/mockData';
+import { addDays, subDays, isToday, isSameDay } from 'date-fns';
 import './WeekView.css';
 
 const HOURS = Array.from({ length: 17 }, (_, i) => i + 6); // 6 AM – 10 PM
@@ -18,8 +24,8 @@ const categoryClass: Record<string, string> = {
 };
 
 // Assign mock start hours to tasks for visual placement
-function assignMockHour(taskName: string, dayIndex: number): number {
-    const nameHash = taskName.split('').reduce((h, c) => h + c.charCodeAt(0), 0);
+function assignMockHour(task: Task, dayIndex: number): number {
+    const nameHash = task.name.split('').reduce((h, c) => h + c.charCodeAt(0), 0);
     return 6 + ((nameHash + dayIndex * 3) % 15); // 6 AM – 8 PM
 }
 
@@ -27,8 +33,7 @@ export default function WeekView() {
     const [weekDate, setWeekDate] = useState(new Date());
     const [quickAdd, setQuickAdd] = useState<{ day: number; hour: number } | null>(null);
     const [quickAddName, setQuickAddName] = useState('');
-    const [instances, setInstances] = useState<TaskInstance[]>([]);
-    const [holidays, setHolidays] = useState<Holiday[]>([]);
+    const [localTasks, setLocalTasks] = useState<Task[]>(mockTasks);
 
     const weekStart = startOfWeek(weekDate, { weekStartsOn: 0 });
 
@@ -37,12 +42,10 @@ export default function WeekView() {
         [weekStart.toISOString()]
     );
 
-    useEffect(() => {
-        const dateStr = format(weekStart, 'yyyy-MM-dd');
-        Promise.all([getWeekInstances(dateStr), getHolidays()])
-            .then(([inst, hol]) => { setInstances(inst); setHolidays(hol); })
-            .catch(console.error);
-    }, [weekStart.toISOString()]);
+    const instances = useMemo(
+        () => expandTaskInstancesForWeek(localTasks, weekDate),
+        [weekDate, localTasks]
+    );
 
     // Group instances by day index and hour
     const grid = useMemo(() => {
@@ -51,7 +54,7 @@ export default function WeekView() {
             const instDate = new Date(inst.occurrence_date);
             const dayIdx = weekDays.findIndex((d) => isSameDay(d, instDate));
             if (dayIdx === -1) continue;
-            const hour = assignMockHour(inst.task?.name || '', dayIdx);
+            const hour = assignMockHour(inst.task!, dayIdx);
             const key = `${dayIdx}-${hour}`;
             if (!map[key]) map[key] = [];
             map[key].push(inst);
@@ -62,15 +65,28 @@ export default function WeekView() {
     // Holiday map for the week
     const holidayMap = useMemo(() => {
         const map: Record<string, string> = {};
-        for (const h of holidays) {
+        for (const h of mockHolidays) {
             map[h.holiday_date] = h.name;
         }
         return map;
-    }, [holidays]);
+    }, []);
 
     const handleQuickAdd = () => {
         if (!quickAddName.trim() || !quickAdd) return;
-        // TODO: call createTask API when quick-add is fully implemented
+        const targetDay = weekDays[quickAdd.day];
+        const newTask: Task = {
+            id: `t-${Date.now()}`,
+            user_id: 'u-001',
+            task_id: `T${String(localTasks.length + 1).padStart(3, '0')}`,
+            name: quickAddName.trim(),
+            category: 'Personal',
+            period: 'OneTime',
+            occurrence: format(targetDay, 'MMM d'),
+            base_time_minutes: 30,
+            status: 'Active',
+            created_at: new Date().toISOString(),
+        };
+        setLocalTasks((prev) => [...prev, newTask]);
         setQuickAdd(null);
         setQuickAddName('');
     };
