@@ -7,3 +7,4 @@ python-dateutil
 httpx
 google-genai
 python-dotenv
+supabase
